@@ -20,7 +20,15 @@ class Miranda < Formula
       s.gsub! "./unprotect", "/usr/bin/true"
     end
 
-    system "make", "install", "BIN=#{bin}", "LIB=#{lib}", "MAN=#{man1}"
+    args = %W[
+      CC=#{ENV.cc}
+      CFLAGS=-O
+      BIN=#{bin}
+      LIB=#{lib}
+      MAN=#{man1}
+    ]
+
+    system "make", "install", *args
   end
 
   test do
