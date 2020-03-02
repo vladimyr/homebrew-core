@@ -31,6 +31,14 @@ class Miranda < Formula
     system "make", "install", *args
   end
 
+  def post_install
+    miralib = "#{lib}/miralib"
+
+    chmod "+w", "#{miralib}/preludx"
+    chmod "+w", Dir["#{miralib}/**/*.x"]
+    system "#{bin}/mira", "-make", "-lib", miralib, "#{miralib}/**/*.m"
+  end
+
   test do
     assert_match version.to_s, shell_output("#{bin}/mira -version")
 
