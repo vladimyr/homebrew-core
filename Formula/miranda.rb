@@ -8,17 +8,15 @@ class Miranda < Formula
   depends_on "byacc" => :build
 
   def install
+    # Make tasks are required to run sequentially
     ENV.deparallelize
 
+    # Makefile assumes that provided paths exist
     bin.mkpath
     lib.mkpath
     man1.mkpath
 
-    inreplace "Makefile" do |s|
-      s.gsub! "./ugroot", "whoami"
-      s.gsub! "./protect", "/usr/bin/true"
-      s.gsub! "./unprotect", "/usr/bin/true"
-    end
+    miralib = "#{lib}/miralib"
 
     args = %W[
       CC=#{ENV.cc}
@@ -28,14 +26,28 @@ class Miranda < Formula
       MAN=#{man1}
     ]
 
+    inreplace "Makefile" do |s|
+      # Skip compilation of `stdenv.m` & provided examples
+      s.gsub! " exfiles", ""
+      # Do NOT touch `#{lib}/miralib/` permissions
+      s.gsub! "./protect", "/usr/bin/true"
+      s.gsub! "./unprotect", "/usr/bin/true"
+      # Do NOT change `#{lib}/miralib/` ownership
+      s.gsub! "./ugroot", "whoami"
+    end
+
+    system "make", "cleanup"
     system "make", "install", *args
+
+    # Remove compiled files, if any
+    rm_f "#{miralib}/preludx"
+    rm Dir["#{miralib}/**/*.x"]
   end
 
   def post_install
     miralib = "#{lib}/miralib"
 
-    chmod "+w", "#{miralib}/preludx"
-    chmod "+w", Dir["#{miralib}/**/*.x"]
+    # Compile `stdenv.m` & provided examples
     system "#{bin}/mira", "-make", "-lib", miralib, "#{miralib}/**/*.m"
   end
 
