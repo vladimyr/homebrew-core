@@ -16,19 +16,7 @@ class Miranda < Formula
     lib.mkpath
     man1.mkpath
 
-    miralib = "#{lib}/miralib"
-
-    args = %W[
-      CC=#{ENV.cc}
-      CFLAGS=-O
-      BIN=#{bin}
-      LIB=#{lib}
-      MAN=#{man1}
-    ]
-
     inreplace "Makefile" do |s|
-      # Skip compilation of `stdenv.m` & provided examples
-      s.gsub! " exfiles", ""
       # Do NOT touch `#{lib}/miralib/` permissions
       s.gsub! "./protect", "/usr/bin/true"
       s.gsub! "./unprotect", "/usr/bin/true"
@@ -36,19 +24,16 @@ class Miranda < Formula
       s.gsub! "./ugroot", "whoami"
     end
 
+    # Remove compiled files
     system "make", "cleanup"
-    system "make", "install", *args
 
-    # Remove compiled files, if any
-    rm_f "#{miralib}/preludx"
-    rm Dir["#{miralib}/**/*.x"]
-  end
+    # Set sources creation date to current date.
+    touch "miralib/prelude"
+    touch Dir["miralib/**/*.m"]
 
-  def post_install
-    miralib = "#{lib}/miralib"
-
-    # Compile `stdenv.m` & provided examples
-    system "#{bin}/mira", "-make", "-lib", miralib, "#{miralib}/**/*.m"
+    system "make", "install",
+           "CC=#{ENV.cc}", "CFLAGS=-O",
+           "BIN=#{bin}", "LIB=#{lib}", "MAN=#{man1}"
   end
 
   test do
